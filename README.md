@@ -51,70 +51,70 @@ Text normalization converts text to lowercase and removes unnecessary characters
 
 We then add a normalized_text column to the dataset:
 
-     def add_normalized_text(example):
-        example['normalized_text'] = normalize_text(example['transcription'])
-        return example
+       def add_normalized_text(example):
+         example['normalized_text'] = normalize_text(example['transcription'])
+         return example
 
-     dataset = dataset.map(add_normalized_text)
+       dataset = dataset.map(add_normalized_text)
 
 **Vocabulary Extraction**
 
 To match the audio transcriptions with the tokenizer's vocabulary, we extract the unique characters in the dataset and compare them with the tokenizer's vocabulary:
 
 
-    def extract_all_chars(batch):
-       all_text = " ".join(batch["normalized_text"])
-       vocab = list(set(all_text))
-       return {"vocab": [vocab], "all_text": [all_text]}
+       def extract_all_chars(batch):
+         all_text = " ".join(batch["normalized_text"])
+         vocab = list(set(all_text))
+         return {"vocab": [vocab], "all_text": [all_text]}
 
-   vocabs = dataset.map(extract_all_chars, batched=True, keep_in_memory=True, 
-   remove_columns=dataset.column_names)
+      vocabs = dataset.map(extract_all_chars, batched=True, keep_in_memory=True, 
+      remove_columns=dataset.column_names)
 
 Next, we check for differences between the dataset vocabulary and the tokenizer vocabulary:
 
-    dataset_vocab = set(vocabs["vocab"][0])
-    tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
-    print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
+      dataset_vocab = set(vocabs["vocab"][0])
+      tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
+      print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
  
 **Speaker Embedding Creation**
 
 Speaker embeddings are crucial for speaker recognition and clustering tasks. We use the SpeechBrain x-vector model to generate speaker embeddings:
 
-   from speechbrain.pretrained import EncoderClassifier
-   speaker_model = EncoderClassifier.from_hparams(
-     source="speechbrain/spkrec-xvect-voxceleb",
-     run_opts={"device": device},
-     savedir=os.path.join("/tmp", spk_model_name),
-   )
+      from speechbrain.pretrained import EncoderClassifier
+      speaker_model = EncoderClassifier.from_hparams(
+        source="speechbrain/spkrec-xvect-voxceleb",
+        run_opts={"device": device},
+        savedir=os.path.join("/tmp", spk_model_name),
+      )
 
-   def create_speaker_embedding(waveform):
-      with torch.no_grad():
-        speaker_embeddings = speaker_model.encode_batch(torch.tensor(waveform))
-        speaker_embeddings = torch.nn.functional.normalize(speaker_embeddings, dim=2)
-        return speaker_embeddings.squeeze().cpu().numpy()
+      def create_speaker_embedding(waveform):
+        with torch.no_grad():
+          speaker_embeddings = speaker_model.encode_batch(torch.tensor(waveform))
+          speaker_embeddings = torch.nn.functional.normalize(speaker_embeddings, dim=2)
+          return speaker_embeddings.squeeze().cpu().numpy()
 
 **Data Preparation**
 
 Finally, we process the dataset by tokenizing text and extracting the corresponding audio and speaker embeddings:
 
-   def prepare_dataset(example):
-     audio = example["audio"]
+      def prepare_dataset(example):
+        audio = example["audio"]
 
-   example = processor(
+      example = processor(
         text=example["normalized_text"],
         audio_target=audio["array"],
         sampling_rate=audio["sampling_rate"],
         return_attention_mask=False,
-    )
+      )
 
-    example["labels"] = example["labels"][0]  # Strip off batch dimension
-    example["speaker_embeddings"] = create_speaker_embedding(audio["array"])  # Speaker embeddings
+       example["labels"] = example["labels"][0]  # Strip off batch dimension
+       example["speaker_embeddings"] = create_speaker_embedding(audio["array"])  # Speaker embeddings
 
-    return example
+       return example
 
 The dataset is processed and ready for model training:
 
-    processed_example = prepare_dataset(dataset[0])
+       processed_example = prepare_dataset(dataset[0])
 
 This completes the steps required to prepare the data for training a Speech-to-Text model.
 
