@@ -1,7 +1,8 @@
 Speech-to-Text Model Training with Hugging Face Transformers and SpeechBrain
 
 This repository demonstrates how to train a Speech-to-Text model using Hugging Face's transformers library with audio datasets and SpeechBrain for speaker embeddings. The code processes audio and text data, performs text normalization, and creates speaker embeddings for a technical text-to-speech model.
-Table of Contents
+
+***Table of Contents***
 
     Installation
     Setup
@@ -11,23 +12,19 @@ Table of Contents
     Speaker Embedding Creation
     Data Preparation
 
-Installation
+***Installation***
 
 To run this code, make sure to install the required Python packages:
 
-bash
+       pip install transformers datasets soundfile accelerate speechbrain==0.5.16
 
-pip install transformers datasets soundfile accelerate speechbrain==0.5.16
-
-Setup
+***Setup***
 
 Before proceeding, you'll need to authenticate your Hugging Face account to download models and datasets.
 
-python
-
-from huggingface_hub import notebook_login
-notebook_login()  # Login with your Hugging Face token
-
+      from huggingface_hub import notebook_login
+      notebook_login()  # Login with your Hugging Face token
+ 
 This step enables access to Hugging Face models and datasets via your account.
 Dataset Loading
 
@@ -41,45 +38,39 @@ dataset = load_dataset("Yassmen/TTS_English_Technical_data", split="train")
 
 This dataset includes audio and transcription features for training speech-to-text models. The audio data is resampled to 16kHz:
 
-python
 
-dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
 
-Text Normalization
+       dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
+       Text Normalization
 
 Text normalization converts text to lowercase and removes unnecessary characters, ensuring better model performance. Here's a function for normalization:
 
-python
-
-import re
-
-def normalize_text(text):
-    text = text.lower()  # Lowercase conversion
-    text = re.sub(r'[^\w\s\']', '', text)  # Remove punctuation
-    return ' '.join(text.split())  # Remove extra whitespace
+      import re
+      def normalize_text(text):
+      text = text.lower()  # Lowercase conversion
+      text = re.sub(r'[^\w\s\']', '', text)  # Remove punctuation
+      return ' '.join(text.split())  # Remove extra whitespace
 
 We then add a normalized_text column to the dataset:
 
-python
+     def add_normalized_text(example):
+        example['normalized_text'] = normalize_text(example['transcription'])
+        return example
 
-def add_normalized_text(example):
-    example['normalized_text'] = normalize_text(example['transcription'])
-    return example
+     dataset = dataset.map(add_normalized_text)
 
-dataset = dataset.map(add_normalized_text)
-
-Vocabulary Extraction
+***Vocabulary Extraction***
 
 To match the audio transcriptions with the tokenizer's vocabulary, we extract the unique characters in the dataset and compare them with the tokenizer's vocabulary:
 
-python
 
-def extract_all_chars(batch):
-    all_text = " ".join(batch["normalized_text"])
-    vocab = list(set(all_text))
-    return {"vocab": [vocab], "all_text": [all_text]}
+    def extract_all_chars(batch):
+       all_text = " ".join(batch["normalized_text"])
+       vocab = list(set(all_text))
+       return {"vocab": [vocab], "all_text": [all_text]}
 
-vocabs = dataset.map(extract_all_chars, batched=True, keep_in_memory=True, remove_columns=dataset.column_names)
+   vocabs = dataset.map(extract_all_chars, batched=True, keep_in_memory=True, 
+   remove_columns=dataset.column_names)
 
 Next, we check for differences between the dataset vocabulary and the tokenizer vocabulary:
 
