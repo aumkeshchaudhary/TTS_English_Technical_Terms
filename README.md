@@ -1,8 +1,8 @@
-                  # Speech-to-Text Model Training with Hugging Face Transformers and SpeechBrain
+                  *** Speech-to-Text Model Training with Hugging Face Transformers and SpeechBrain ***
 
 This repository demonstrates how to train a Speech-to-Text model using Hugging Face's transformers library with audio datasets and SpeechBrain for speaker embeddings. The code processes audio and text data, performs text normalization, and creates speaker embeddings for a technical text-to-speech model.
 
-***Table of Contents***
+**Table of Contents**
 
     Installation
     Setup
@@ -12,13 +12,13 @@ This repository demonstrates how to train a Speech-to-Text model using Hugging F
     Speaker Embedding Creation
     Data Preparation
 
-***Installation***
+**Installation**
 
 To run this code, make sure to install the required Python packages:
 
        pip install transformers datasets soundfile accelerate speechbrain==0.5.16
 
-***Setup***
+**Setup**
 
 Before proceeding, you'll need to authenticate your Hugging Face account to download models and datasets.
 
@@ -26,7 +26,8 @@ Before proceeding, you'll need to authenticate your Hugging Face account to down
       notebook_login()  # Login with your Hugging Face token
  
 This step enables access to Hugging Face models and datasets via your account.
-Dataset Loading
+
+**Dataset Loading**
 
 We load the English technical text-to-speech dataset (TTS_English_Technical_data) from Hugging Face:
 
@@ -37,7 +38,8 @@ We load the English technical text-to-speech dataset (TTS_English_Technical_data
 This dataset includes audio and transcription features for training speech-to-text models. The audio data is resampled to 16kHz:
 
       dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
-      Text Normalization
+     
+**Text Normalization**
 
 Text normalization converts text to lowercase and removes unnecessary characters, ensuring better model performance. Here's a function for normalization:
 
@@ -55,7 +57,7 @@ We then add a normalized_text column to the dataset:
 
      dataset = dataset.map(add_normalized_text)
 
-***Vocabulary Extraction***
+**Vocabulary Extraction**
 
 To match the audio transcriptions with the tokenizer's vocabulary, we extract the unique characters in the dataset and compare them with the tokenizer's vocabulary:
 
@@ -74,7 +76,7 @@ Next, we check for differences between the dataset vocabulary and the tokenizer 
     tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
     print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
  
-***Speaker Embedding Creation***
+**Speaker Embedding Creation**
 
 Speaker embeddings are crucial for speaker recognition and clustering tasks. We use the SpeechBrain x-vector model to generate speaker embeddings:
 
@@ -91,7 +93,7 @@ Speaker embeddings are crucial for speaker recognition and clustering tasks. We 
         speaker_embeddings = torch.nn.functional.normalize(speaker_embeddings, dim=2)
         return speaker_embeddings.squeeze().cpu().numpy()
 
-***Data Preparation***
+**Data Preparation**
 
 Finally, we process the dataset by tokenizing text and extracting the corresponding audio and speaker embeddings:
 
@@ -115,7 +117,9 @@ The dataset is processed and ready for model training:
     processed_example = prepare_dataset(dataset[0])
 
 This completes the steps required to prepare the data for training a Speech-to-Text model.
-Conclusion
+
+
+**Conclusion**
 
 This repository outlines how to:
 
