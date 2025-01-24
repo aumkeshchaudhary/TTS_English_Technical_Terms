@@ -1,4 +1,7 @@
 # Fine-Tuning SpeechT5 for English Speech-to-Text with a Focus on Technical Terminology
+Link to huggingface space:
+
+                         Aumkeshchy2003/English-tts
 
 This repository demonstrates how to train a Speech-to-Text model using Hugging Face's transformers library with audio datasets and SpeechBrain for speaker embeddings. The code processes audio and text data, performs text normalization, and creates speaker embeddings for a technical text-to-speech model.
 
