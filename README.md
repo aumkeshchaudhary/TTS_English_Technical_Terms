@@ -1,133 +1,151 @@
-# Fine-Tuning SpeechT5 for English Speech-to-Text with a Focus on Technical Terminology
-Link to huggingface space:
+#  Fine-Tuning SpeechT5 for English Speech-to-Text with a Focus on Technical Terminology
 
-                         Aumkeshchy2003/English-tts
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow)](https://huggingface.co/spaces/Aumkeshchy2003/English-tts)
 
-This repository demonstrates how to train a Speech-to-Text model using Hugging Face's transformers library with audio datasets and SpeechBrain for speaker embeddings. The code processes audio and text data, performs text normalization, and creates speaker embeddings for a technical text-to-speech model.
+Transform technical speech into accurate text with our fine-tuned SpeechT5 model. This repository provides a comprehensive guide for training a Speech-to-Text model using Hugging Face's transformers library, combined with audio datasets and SpeechBrain for speaker embeddings.
 
-**Table of Contents**
+## 🚀 Features
 
-    Installation
-    Setup
-    Dataset Loading
-    Text Normalization
-    Vocabulary Extraction
-    Speaker Embedding Creation
-    Data Preparation
+- Custom text normalization pipeline
+- Speaker embedding generation using SpeechBrain
+- Vocabulary extraction and management
+- Optimized for technical terminology
+- Complete data preparation workflow
 
-**Installation**
+## 📋 Table of Contents
 
-To run this code, make sure to install the required Python packages:
+- [Installation](#installation)
+- [Setup](#setup)
+- [Dataset Loading](#dataset-loading)
+- [Text Normalization](#text-normalization)
+- [Vocabulary Extraction](#vocabulary-extraction)
+- [Speaker Embedding Creation](#speaker-embedding-creation)
+- [Data Preparation](#data-preparation)
 
-       pip install transformers datasets soundfile accelerate speechbrain==0.5.16
+## 🛠️ Installation
 
-**Setup**
+Install the required Python packages:
 
-Before proceeding, you'll need to authenticate your Hugging Face account to download models and datasets.
+```bash
+pip install transformers datasets soundfile accelerate speechbrain==0.5.16
+```
 
-      from huggingface_hub import notebook_login
-      notebook_login()  # Login with your Hugging Face token
- 
-This step enables access to Hugging Face models and datasets via your account.
+## ⚙️ Setup
 
-**Dataset Loading**
+Authenticate your Hugging Face account to access models and datasets:
 
-We load the English technical text-to-speech dataset (TTS_English_Technical_data) from Hugging Face:
+```python
+from huggingface_hub import notebook_login
+notebook_login()  # Login with your Hugging Face token
+```
 
+## 📊 Dataset Loading
 
-      from datasets import load_dataset, Audio
-      dataset = load_dataset("Yassmen/TTS_English_Technical_data", split="train")
+Load the English technical text-to-speech dataset:
 
-This dataset includes audio and transcription features for training speech-to-text models. The audio data is resampled to 16kHz:
+```python
+from datasets import load_dataset, Audio
+dataset = load_dataset("Yassmen/TTS_English_Technical_data", split="train")
 
-      dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
-     
-**Text Normalization**
+# Resample audio to 16kHz
+dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
+```
 
-Text normalization converts text to lowercase and removes unnecessary characters, ensuring better model performance. Here's a function for normalization:
+## 📝 Text Normalization
 
-      import re
-      def normalize_text(text):
-      text = text.lower()  # Lowercase conversion
-      text = re.sub(r'[^\w\s\']', '', text)  # Remove punctuation
-      return ' '.join(text.split())  # Remove extra whitespace
+Implement text normalization for improved model performance:
 
-We then add a normalized_text column to the dataset:
+```python
+import re
 
-       def add_normalized_text(example):
-         example['normalized_text'] = normalize_text(example['transcription'])
-         return example
+def normalize_text(text):
+    text = text.lower()  # Lowercase conversion
+    text = re.sub(r'[^\w\s\']', '', text)  # Remove punctuation
+    return ' '.join(text.split())  # Remove extra whitespace
 
-       dataset = dataset.map(add_normalized_text)
+def add_normalized_text(example):
+    example['normalized_text'] = normalize_text(example['transcription'])
+    return example
 
-**Vocabulary Extraction**
+dataset = dataset.map(add_normalized_text)
+```
 
-To match the audio transcriptions with the tokenizer's vocabulary, we extract the unique characters in the dataset and compare them with the tokenizer's vocabulary:
+## 📚 Vocabulary Extraction
 
+Extract and compare dataset vocabulary with tokenizer vocabulary:
 
-       def extract_all_chars(batch):
-         all_text = " ".join(batch["normalized_text"])
-         vocab = list(set(all_text))
-         return {"vocab": [vocab], "all_text": [all_text]}
+```python
+def extract_all_chars(batch):
+    all_text = " ".join(batch["normalized_text"])
+    vocab = list(set(all_text))
+    return {"vocab": [vocab], "all_text": [all_text]}
 
-      vocabs = dataset.map(extract_all_chars, batched=True, keep_in_memory=True, 
-      remove_columns=dataset.column_names)
+vocabs = dataset.map(
+    extract_all_chars,
+    batched=True,
+    keep_in_memory=True,
+    remove_columns=dataset.column_names
+)
 
-Next, we check for differences between the dataset vocabulary and the tokenizer vocabulary:
+# Compare vocabularies
+dataset_vocab = set(vocabs["vocab"][0])
+tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
+print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
+```
 
-      dataset_vocab = set(vocabs["vocab"][0])
-      tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
-      print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
- 
-**Speaker Embedding Creation**
+## 👤 Speaker Embedding Creation
 
-Speaker embeddings are crucial for speaker recognition and clustering tasks. We use the SpeechBrain x-vector model to generate speaker embeddings:
+Generate speaker embeddings using SpeechBrain's x-vector model:
 
-      from speechbrain.pretrained import EncoderClassifier
-      speaker_model = EncoderClassifier.from_hparams(
-        source="speechbrain/spkrec-xvect-voxceleb",
-        run_opts={"device": device},
-        savedir=os.path.join("/tmp", spk_model_name),
-      )
+```python
+from speechbrain.pretrained import EncoderClassifier
 
-      def create_speaker_embedding(waveform):
-        with torch.no_grad():
-          speaker_embeddings = speaker_model.encode_batch(torch.tensor(waveform))
-          speaker_embeddings = torch.nn.functional.normalize(speaker_embeddings, dim=2)
-          return speaker_embeddings.squeeze().cpu().numpy()
+speaker_model = EncoderClassifier.from_hparams(
+    source="speechbrain/spkrec-xvect-voxceleb",
+    run_opts={"device": device},
+    savedir=os.path.join("/tmp", spk_model_name),
+)
 
-**Data Preparation**
+def create_speaker_embedding(waveform):
+    with torch.no_grad():
+        speaker_embeddings = speaker_model.encode_batch(torch.tensor(waveform))
+        speaker_embeddings = torch.nn.functional.normalize(speaker_embeddings, dim=2)
+        return speaker_embeddings.squeeze().cpu().numpy()
+```
 
-Finally, we process the dataset by tokenizing text and extracting the corresponding audio and speaker embeddings:
+## 🔄 Data Preparation
 
-      def prepare_dataset(example):
-        audio = example["audio"]
+Process the dataset for training:
 
-      example = processor(
+```python
+def prepare_dataset(example):
+    audio = example["audio"]
+    
+    example = processor(
         text=example["normalized_text"],
         audio_target=audio["array"],
         sampling_rate=audio["sampling_rate"],
         return_attention_mask=False,
-      )
+    )
+    
+    example["labels"] = example["labels"][0]  # Strip off batch dimension
+    example["speaker_embeddings"] = create_speaker_embedding(audio["array"])
+    
+    return example
 
-       example["labels"] = example["labels"][0]  # Strip off batch dimension
-       example["speaker_embeddings"] = create_speaker_embedding(audio["array"])  # Speaker embeddings
+processed_example = prepare_dataset(dataset[0])
+```
 
-       return example
+## ✨ Conclusion
 
-The dataset is processed and ready for model training:
+This repository provides a complete workflow for:
 
-       processed_example = prepare_dataset(dataset[0])
+- Loading and preprocessing audio datasets
+- Normalizing transcription text
+- Creating and managing dataset vocabulary
+- Generating speaker embeddings via SpeechBrain
+- Preparing datasets for model training
 
-This completes the steps required to prepare the data for training a Speech-to-Text model.
+---
 
-
-**Conclusion**
-
-This repository outlines how to:
-
-    Load and preprocess an audio dataset.
-    Normalize transcription text.
-    Create vocabulary for the dataset.
-    Generate speaker embeddings using SpeechBrain.
-    Prepare the dataset for training.
+💡 For more information about the model or to try it out, visit our [Hugging Face Space](https://huggingface.co/spaces/Aumkeshchy2003/English-tts).
