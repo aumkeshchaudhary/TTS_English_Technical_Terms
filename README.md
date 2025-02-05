@@ -4,7 +4,7 @@
 
 Transform technical speech into accurate text with our fine-tuned SpeechT5 model. This repository provides a comprehensive guide for training a Speech-to-Text model using Hugging Face's transformers library, combined with audio datasets and SpeechBrain for speaker embeddings.
 
-## 🚀 Features
+##  Features
 
 - Custom text normalization pipeline
 - Speaker embedding generation using SpeechBrain
@@ -12,7 +12,7 @@ Transform technical speech into accurate text with our fine-tuned SpeechT5 model
 - Optimized for technical terminology
 - Complete data preparation workflow
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Installation](#installation)
 - [Setup](#setup)
@@ -22,7 +22,7 @@ Transform technical speech into accurate text with our fine-tuned SpeechT5 model
 - [Speaker Embedding Creation](#speaker-embedding-creation)
 - [Data Preparation](#data-preparation)
 
-## 🛠️ Installation
+##  Installation
 
 Install the required Python packages:
 
@@ -30,7 +30,7 @@ Install the required Python packages:
 pip install transformers datasets soundfile accelerate speechbrain==0.5.16
 ```
 
-## ⚙️ Setup
+##  Setup
 
 Authenticate your Hugging Face account to access models and datasets:
 
@@ -39,7 +39,7 @@ from huggingface_hub import notebook_login
 notebook_login()  # Login with your Hugging Face token
 ```
 
-## 📊 Dataset Loading
+##  Dataset Loading
 
 Load the English technical text-to-speech dataset:
 
@@ -51,7 +51,7 @@ dataset = load_dataset("Yassmen/TTS_English_Technical_data", split="train")
 dataset = dataset.cast_column("audio", Audio(sampling_rate=16000))
 ```
 
-## 📝 Text Normalization
+##  Text Normalization
 
 Implement text normalization for improved model performance:
 
@@ -70,7 +70,7 @@ def add_normalized_text(example):
 dataset = dataset.map(add_normalized_text)
 ```
 
-## 📚 Vocabulary Extraction
+##  Vocabulary Extraction
 
 Extract and compare dataset vocabulary with tokenizer vocabulary:
 
@@ -93,7 +93,7 @@ tokenizer_vocab = {k for k, _ in tokenizer.get_vocab().items()}
 print(dataset_vocab - tokenizer_vocab)  # Displays characters not in tokenizer's vocabulary
 ```
 
-## 👤 Speaker Embedding Creation
+##  Speaker Embedding Creation
 
 Generate speaker embeddings using SpeechBrain's x-vector model:
 
@@ -113,7 +113,7 @@ def create_speaker_embedding(waveform):
         return speaker_embeddings.squeeze().cpu().numpy()
 ```
 
-## 🔄 Data Preparation
+##  Data Preparation
 
 Process the dataset for training:
 
@@ -136,7 +136,7 @@ def prepare_dataset(example):
 processed_example = prepare_dataset(dataset[0])
 ```
 
-## ✨ Conclusion
+##  Conclusion
 
 This repository provides a complete workflow for:
 
